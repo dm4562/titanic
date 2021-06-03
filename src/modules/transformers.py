@@ -75,17 +75,17 @@ class SmoothMeanTransformer(BaseEstimator, TransformerMixin):
     def __init__(self, col=None, m=150):
         super().__init__()
         self.col = col
+        self.m = m
         self.prior = None
         self.smooth = None
-        self.m = m
 
-    def fit(self, X, y=None):
+    def fit(self, X, y):
         assert isinstance(X, pd.DataFrame)
 
-        self.prior = X[self.col].mean()
         y_label = "__y"
 
         X[y_label] = y
+        self.prior = X[y_label].mean()
 
         # Compute the number of values and the mean of each group
         train_agg = X.groupby(self.col)[y_label].agg(['count', 'mean'])
@@ -95,12 +95,13 @@ class SmoothMeanTransformer(BaseEstimator, TransformerMixin):
         # Compute the "smoothed" means for train dataset
         self.smooth = (counts * means + self.m * self.prior) / (counts + self.m)
 
-        X.drop(columns=y_label)
+        X.drop(columns=y_label, inplace=True)
         return self
 
-    def transform(self, X, y):
+    def transform(self, X, y=None):
         assert isinstance(X, pd.DataFrame)
         assert self.prior
+        assert isinstance(X, pd.DataFrame)
 
         X_ = X.copy()
         X_[self.col]
@@ -108,4 +109,18 @@ class SmoothMeanTransformer(BaseEstimator, TransformerMixin):
         # Entries that dont exist in self.smooth will just get overwritten
         # by prior
         X_[self.col] = X_[self.col].map(self.smooth).fillna(self.prior)
+        return X_
+
+
+class DropTransformer(BaseEstimator, TransformerMixin):
+    def __init__(self, cols=[]):
+        super().__init__()
+        self.cols = cols
+
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X, y=None):
+        X_ = X.copy()
+        X_.drop(columns=self.cols, inplace=True)
         return X_
