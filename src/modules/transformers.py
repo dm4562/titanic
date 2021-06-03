@@ -4,11 +4,13 @@ from sklearn.impute import SimpleImputer
 
 import pandas as pd
 
+from sklearn.utils.estimator_checks import check_estimator
+
 
 class OneHotTransformer(BaseEstimator, TransformerMixin):
-    def __init__(self, col=None, **kwargs):
+    def __init__(self, col):
         super().__init__()
-        self.enc = OneHotEncoder(**kwargs)
+        self.enc = OneHotEncoder(sparse=False, drop="first")
         self.col = col
 
     def fit(self, X, y=None):
@@ -34,10 +36,12 @@ class OneHotTransformer(BaseEstimator, TransformerMixin):
 
 
 class ImputeTransformer(BaseEstimator, TransformerMixin):
-    def __init__(self, col=None, **kwargs):
+    def __init__(self, col, missing_values, strategy):
         super().__init__()
-        self.imp = SimpleImputer(**kwargs)
+        self.imp = SimpleImputer(missing_values=missing_values, strategy=strategy)
         self.col = col
+        self.missing_values = missing_values
+        self.strategy = strategy
 
     def fit(self, X, y=None):
         assert isinstance(X, pd.DataFrame)
@@ -101,7 +105,6 @@ class SmoothMeanTransformer(BaseEstimator, TransformerMixin):
     def transform(self, X, y=None):
         assert isinstance(X, pd.DataFrame)
         assert self.prior
-        assert isinstance(X, pd.DataFrame)
 
         X_ = X.copy()
         X_[self.col]
@@ -121,6 +124,29 @@ class DropTransformer(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, X, y=None):
+        assert isinstance(X, pd.DataFrame)
         X_ = X.copy()
         X_.drop(columns=self.cols, inplace=True)
         return X_
+
+class Debug(BaseEstimator, TransformerMixin):
+
+    def transform(self, X):
+        print(X)
+        print(X.shape)
+        print(X.isna().sum())
+        return X
+
+    def fit(self, X, y=None, **fit_params):
+        return self
+
+class ResetIndexTransformer(BaseEstimator, TransformerMixin):
+
+    def transform(self, X):
+        assert isinstance(X, pd.DataFrame)
+        X_ = X.copy()
+        X_.reset_index(drop=True, inplace=True)
+        return X_
+
+    def fit(self, X, y=None, **fit_params):
+        return self
