@@ -1,10 +1,9 @@
 from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import OneHotEncoder, MinMaxScaler
 from sklearn.impute import SimpleImputer
 
 import pandas as pd
 
-from sklearn.utils.estimator_checks import check_estimator
 
 
 class OneHotTransformer(BaseEstimator, TransformerMixin):
@@ -150,3 +149,34 @@ class ResetIndexTransformer(BaseEstimator, TransformerMixin):
 
     def fit(self, X, y=None, **fit_params):
         return self
+
+
+class StandardScalerTransformer(BaseEstimator, TransformerMixin):
+
+    def __init__(self, cols=None):
+        super().__init__()
+        self.cols = cols
+        self.scaler = MinMaxScaler()
+
+    def fit(self, X, y=None):
+        assert isinstance(X, pd.DataFrame)
+
+        if self.cols:
+            self.scaler.fit(X[self.cols])
+        else:
+            self.scaler.fit(X)
+
+        return self
+
+    def transform(self, X, y=None):
+        assert isinstance(X, pd.DataFrame)
+
+        X_ = X.copy()
+        if self.cols:
+            temp = pd.DataFrame(data=self.scaler.transform(X[self.cols]), columns=self.cols)
+            for col in self.cols:
+                X_[col] = temp[col]
+        else:
+            X_ = pd.DataFrame(data=self.scaler.transform(X), columns=X.columns)
+
+        return X_
