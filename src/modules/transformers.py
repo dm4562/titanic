@@ -1,5 +1,5 @@
 from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.preprocessing import OneHotEncoder, MinMaxScaler
+from sklearn.preprocessing import OneHotEncoder, MinMaxScaler, StandardScaler
 from sklearn.impute import SimpleImputer
 
 import pandas as pd
@@ -153,10 +153,15 @@ class ResetIndexTransformer(BaseEstimator, TransformerMixin):
 
 class StandardScalerTransformer(BaseEstimator, TransformerMixin):
 
-    def __init__(self, cols=None):
+    def __init__(self, cols=None, normalize=False):
         super().__init__()
         self.cols = cols
-        self.scaler = MinMaxScaler()
+        self.normalize = normalize
+
+        if not normalize:
+            self.scaler = MinMaxScaler()
+        else:
+            self.scaler = StandardScaler()
 
     def fit(self, X, y=None):
         assert isinstance(X, pd.DataFrame)
